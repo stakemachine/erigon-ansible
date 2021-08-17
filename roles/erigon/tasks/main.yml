@@ -1,0 +1,105 @@
+---
+# tasks file for erigon
+- name: "Add user {{ erigon_user }}"
+  user:
+    name: "{{ erigon_user }}"
+    shell: /bin/bash
+
+- name: Install packages
+  apt:
+    pkg:
+    - make
+    - git
+    - build-essential
+
+- name: Update .profile
+  blockinfile:
+    path: /home/{{ erigon_user }}/.profile
+    owner: "{{ erigon_user }}"
+    group: "{{ erigon_user }}"
+    create: yes
+    mode: "644"
+    block: |
+      GOPATH="$HOME/go"
+      PATH="$GOPATH/bin:$PATH"
+      PATH="$PATH:/usr/local/go/bin"
+
+- name: Download Go
+  get_url: 
+    url: "{{ go_url }}"
+    dest: "/tmp"
+  register: dl_go
+  become: yes
+  become_user: root
+
+- name: Install Go
+  unarchive:
+    src: "{{ dl_go.dest }}"
+    remote_src: yes
+    dest: /usr/local
+  become: yes
+  become_user: root
+
+- name: Git clone erigon
+  git:
+    repo: "https://github.com/ledgerwatch/erigon"
+    dest: "/home/{{ erigon_user }}/erigon"
+    version: "{{ erigon_branch }}"
+    force: yes
+  become: yes
+  become_user: "{{ erigon_user }}"
+
+- name: Build erigon and rpcdaemon
+  shell: "source /home/{{ erigon_user }}/.profile && make erigon rpcdaemon"
+  args:
+    executable: /bin/bash
+    chdir: "/home/{{ erigon_user }}/erigon"
+    warn: no
+  become: yes
+  become_user: "{{ erigon_user }}"
+
+- name: Populate service facts
+  service_facts:
+
+- name: "stop {{ erigon_service }} service if exists"
+  systemd:
+    name: "{{ erigon_service }}"
+    state: stopped
+  when: erigon_service_full in ansible_facts.services
+
+- name: "stop {{ rpcdaemon_service }} service if exists"
+  systemd:
+    name: "{{ rpcdaemon_service }}"
+    state: stopped
+  when: rpcdaemon_service_full in ansible_facts.services
+
+- name: Create erigon Systemd file
+  template:
+    src: "files/erigon.service"
+    dest: "/etc/systemd/system/{{ erigon_service_full }}"
+    mode: 0644
+  become: yes
+  become_user: root
+
+- name: Create rpcdaemon Systemd file
+  template:
+    src: "files/rpcdaemon.service"
+    dest: "/etc/systemd/system/{{ rpcdaemon_service_full }}"
+    mode: 0644
+  become: yes
+  become_user: root
+
+
+- name: enable and start erigon
+  systemd:
+    name: "{{ erigon_service }}"
+    state: started
+    daemon_reload: yes
+    enabled: yes
+
+- name: enable and start rpcdaemon
+  systemd:
+    name: "{{ rpcdaemon_service }}"
+    state: started
+    daemon_reload: yes
+    enabled: yes

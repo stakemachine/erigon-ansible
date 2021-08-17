@@ -1,0 +1,15 @@
+[Unit]
+Description=rpcdaemon
+After=network.target
+
+[Service]
+Type=simple
+User={{ erigon_user }}
+WorkingDirectory=/home/{{ erigon_user }}
+ExecStart=/home/{{ erigon_user }}/erigon/build/bin/{{ rpcdaemon_service_executable }} {{ rpcdaemon_args }}
+Restart=on-failure
+RestartSec=3
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target

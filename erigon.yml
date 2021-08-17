@@ -1,0 +1,4 @@
+---
+- hosts: erigon
+  roles:
+    - { role: erigon, become: yes }
