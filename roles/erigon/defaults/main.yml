@@ -3,13 +3,13 @@
 erigon_user: erigon
 erigon_branch: stable
 erigon_datadir: "/home/{{ erigon_user }}/.local/share/erigon/"
-erigon_args: "--datadir={{ erigon_datadir }} -p2p.eth65.port=30305"
+erigon_args: "--datadir={{ erigon_datadir }}"
 rpcdaemon_args: "--http.addr=0.0.0.0 --http.vhosts=* --http.corsdomain=* --http.api=eth,debug,net,trace --verbosity 4 --datadir={{ erigon_datadir }} --trace.compat=true"
 
 erigon_service: erigon
 erigon_service_full: "{{ erigon_service }}.service"
 rpcdaemon_service: rpcdaemon
 rpcdaemon_service_full: "{{ rpcdaemon_service }}.service"
-go_url: https://golang.org/dl/go1.16.7.linux-amd64.tar.gz
+go_url: https://golang.org/dl/go1.17.linux-amd64.tar.gz
 erigon_service_executable: erigon
 rpcdaemon_service_executable: rpcdaemon
